@@ -12,7 +12,7 @@ The original source branch remains preserved for provenance and rollback.
 
 ## Shared module architecture policy
 
-**Design standard (21 November 2026):** [Modular RandomX integration architecture](docs/MODULAR-RANDOMX-ARCHITECTURE.md). All future coin modernisations must consume a **pinned, versioned shared C++ engine** through their own isolated consensus adapter. Changes to the engine are **not automatically propagated** to other coins; each adoption requires independent verification. The module is a build-time dependency, not a hot-swappable plugin. See also the [coin-specific release gates](docs/COIN-INTEGRATION.md).
+**Design standard (21 November 2026):** [Modular RandomX integration architecture](docs/MODULAR-RANDOMX-ARCHITECTURE.md). The shared module is intended for **all five independent blockchains: XNUVA, TAO, ERA, ZUS and HOPE**, each with a **pinned, versioned C++ dependency** and its own isolated consensus adapter. **XNUVA is the fifth adapter**; because it already runs RandomX v2, its adoption is a separate bit-for-bit compatibility refactor, **not** a new hard fork. Changes to the engine are **not automatically propagated** to other coins; each adoption requires independent verification. The module is a build-time dependency, not a hot-swappable plugin. See also the [coin-specific release gates](docs/COIN-INTEGRATION.md).
 
 ## Goal
 
@@ -76,7 +76,7 @@ checkout is **not automatically proven** to match the pinned revision.
 
 ## Integration strategy
 
-Other coins may include this dedicated repository as a pinned dependency
+Each of the five coins may eventually include this dedicated repository as a pinned dependency
 once tests and audit gates pass:
 
 ```cmake
@@ -89,7 +89,7 @@ adapter must choose exactly when to call RandomX and derive the seed from
 validated canonical ancestors. No activation height has been set.
 Historical PoW must still validate with its original algorithm.
 ZUS and HOPE must also preserve and validate their independent PoS blocks
-under the existing staking rules.
+under the existing staking rules. XNUVA must prove exact compatibility with its current in-tree RandomX v2 implementation before replacing it.
 
 See [coin integration gates](docs/COIN-INTEGRATION.md).
 

@@ -31,11 +31,15 @@ valid Proof of Work. Those are consensus rules and must remain coin-specific.
 9. Obtain operator/miner upgrade coordination and explicit separate approval
    for public network activation. Historical funds and genesis are immutable.
 
+## Special XNUVA qualification gate
+
+XNUVA is **already a RandomX blockchain**. Its planned adapter is a strictly compatible, future shared-library integration—not another PoW hard fork. Existing production hashing and wallet/miner code must remain untouched until isolated implementation, deterministic source and cross-platform hash parity, historical replay, independent block acceptance, wallet reward accounting, Game treasury, restarts and sustained-operation tests have passed. Never infer that XNUVA's existing RandomX code is already linked to this standalone module.
+
 ## Per-chain matrix
 
 | Chain | Original consensus | Adapter obligation |
 |-------|--------------------|--------------------|
-| XNUVA | RandomX | Preserve already deployed variant and live chain. No implicit refactor. |
+| XNUVA | Existing RandomX v2 | **Fifth adapter target**. Preserve deployed hash variant, exact header bytes, seed epochs, difficulty, block acceptance and history; migrate to a pinned shared engine **only after bit-for-bit parity and independent network/wallet/miner/treasury qualification**. No new fork or rebrand by default. |
 | TAO | Scrypt PoW | Preserve all historic Scrypt and original retarget; new RandomX PoW only after a separately approved activation height. |
 | ERA | Legacy PoW | Audit live/historical algorithm and all difficulty rules before implementation. |
 | ZUS | Hybrid PoW + PoS | Change only prospective PoW. Preserve all stake paths and hybrid chain-selection semantics. |

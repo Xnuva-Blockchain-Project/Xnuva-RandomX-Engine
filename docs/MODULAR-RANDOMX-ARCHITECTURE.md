@@ -8,10 +8,10 @@
 
 ## Decision
 
-Maintain **one independently versioned shared RandomX C++ library**, with **one small, explicitly audited adapter in each modernised coin**.
+Maintain **one independently versioned shared RandomX C++ library**, with **five coin-specific adapters**: **XNUVA, TAO, Europa, Zeus and Hopium**. The four legacy coins adopt RandomX through separately approved modernisations; XNUVA is an **existing RandomX chain** whose adoption of the common library is a separate, parity-gated refactor, **not** a new hard-fork programme.
 
-- No parallel copies of the algorithm maintained inside the TAO, Europa, Zeus and Hopium repositories.
-- No implicit change to XNUVA's already deployed RandomX validation or existing live chain: treat XNUVA as a compatibility reference, not an automatic refactoring target.
+- No parallel independently maintained copies of the algorithm in the five coin repositories once each migration is qualified. Existing working code remains in place until its replacement has passed the required gates.
+- XNUVA's existing live RandomX v2 code, seed schedule, block hashes, consensus and wallets must remain unchanged during planning. Include XNUVA as the **fifth adapter**, and require independent bit-for-bit compatibility evidence before considering its shared-library integration.
 - Every coin pins a **specific immutable library commit/release** and the exact RandomX variant/source revision, and records the pinned version in its build manifest and tests.
 - Every library update is **opt-in per coin**, and proceeds through independent testing, review, reproducible builds and a separately approved release.
 - Neither a GitHub tag/branch nor a successful compilation grants permission for a network hard fork.
@@ -29,12 +29,14 @@ Xnuva-RandomX-Engine  (independent, versioned C++ module)
   └─ Published immutable release commits, reproducible build instructions
                       │
              exact pinned version
-           ┌──────────┼────────────┬───────────────┐
-           │          │            │               │
-      TaoX adapter   EuropaX    ZeusX adapter  HopiumX adapter
-       (TOAX)         (ERAX)       (ZUSX)          (HOPEX)
-           │          │            │               │
-      TAO consensus  ERA rules   ZUS PoW+PoS    HOPE PoW+PoS
+       ┌──────────┬──────────┬──────────┬───────────┬───────────┐
+       │          │          │          │           │           │
+   XNUVA       TaoX       EuropaX     ZeusX       HopiumX
+   adapter     adapter    adapter     adapter      adapter
+    (XNUVA)     (TOAX)     (ERAX)      (ZUSX)       (HOPEX)
+       │          │          │          │           │
+  XNUVA PoW   TAO PoW    ERA PoW    ZUS PoW/PoS  HOPE PoW/PoS
+  (existing)  (future)   (future)    (future)     (future)
 ```
 
 **The library answers:** Given the exact algorithm variant, the input bytes and the seed key, what is the 32-byte raw RandomX digest? It manages hashing resources and exposes a narrow, deterministic interface.
@@ -60,7 +62,7 @@ Pin the **entire** dependency graph, including the underlying XNUVA RandomX v2 i
 ## Non-negotiable consensus boundaries
 
 1. **No history rewrite:** Preserve each original genesis, all valid historical blocks/IDs/transactions, addresses, private keys, balances, existing monetary supply and wallet recovery.
-2. **Explicit fork gate:** Until the independently specified and approved activation height/time, use the coin's **original** proof-of-work rules. At and after activation, use RandomX **only** where the coin's consensus specifies it. No fork heights or dates are set by this architecture.
+2. **Explicit fork gate for the four legacy coins:** Until each independently specified and approved activation height/time, use its **original** proof-of-work rules. At and after activation, use RandomX **only** where that coin's consensus specifies it. **XNUVA already uses RandomX and requires no new hard-fork height merely to adopt the identical shared library.** No fork heights or dates are set by this architecture.
 3. **Distinct seed schedules:** Define each coin's seed/key derivation, epochs, anchor/block identity, canonical ancestor validation, header encoding, byte order, target comparison, initial post-fork difficulty, retargeting and chainwork. Do **not** assume XNUVA seed parameters automatically suit other coins.
 4. **Hybrid preservation:** Zeus/ZUS and Hopium/HOPE are **Proof-of-Work plus Proof-of-Stake** networks. Preserve PoS kernels, stake modifiers, eligibility, timestamp/signature checks, staking rewards and PoS/hybrid chain selection across the future PoW transition.
 5. **Algorithm compatibility:** XNUVA currently uses the specific `RANDOMX_FLAG_V2` algorithm variant. Generic upstream RandomX v1 is **not byte-for-byte interchangeable**; algorithm variants are explicit consensus choices.
@@ -82,18 +84,30 @@ Pin the **entire** dependency graph, including the underlying XNUVA RandomX v2 i
 1. **Engine first:** Change code only on the dedicated engine development branch; link issue, immutable commit, algorithm variant, licence review, test vectors and any measured performance impact.
 2. **Engine qualification:** Compile on Linux and Windows, run deterministic vectors, negative/error cases, light/fast equivalence (when implemented), portability, parallel/restart/cache-failure tests and independent reference checks. No PASS without actual execution evidence.
 3. **Publish candidate:** Produce a signed or otherwise verifiable, immutable engine release/tag with source commit and dependency provenance, plus a changelog stating whether hashes/consensus are preserved.
-4. **Choose an adopter:** Update **one coin's experimental modernisation branch** to the exact engine version. Keep its current lockfile/submodule commit and a known-good rollback checkpoint.
-5. **Test coin adapter:** Prove existing chain history validates, activation boundaries `H-1/H/H+1` are correct, alternative branches/seed rollover work, mining/staking/rewards mature properly, restarts recover, and independent nodes agree.
+4. **Choose an adopter:** Update **one coin's isolated experimental branch** to the exact engine version. Keep its current lockfile/submodule commit and a known-good rollback checkpoint. **For XNUVA, use a separate parity-focused adapter integration branch, never silently alter its already-live hashing code.**
+5. **Test coin adapter:** Prove existing chain history validates, alternative branches/seed rollover work, mining/staking/rewards mature properly, restarts recover, and independent nodes agree. For each **new hard fork**, also prove activation boundaries `H-1/H/H+1`; for **XNUVA**, instead prove exact historical and future RandomX v2 input/seed/digest parity against the currently deployed implementation across all validation/mining paths, with no consensus activation change.
 6. **Operator coordination:** Explicitly approve and announce any separately required hard fork; validate wallet upgrade and security procedures, and give miners and node operators time to coordinate.
 7. **Release/monitor:** Ship only the qualified coin build. Monitor independent peers, wallet rewards, treasury/indexer attribution and 24–48h sustained operation. Roll back an incompatible **software build** when safe; never claim an already activated consensus fork can simply be reversed.
-8. **Repeat per coin:** TAO, ERA, ZUS, HOPE are separate qualification programmes. A successful upgrade of one is not proof for another.
+8. **Repeat per coin:** XNUVA, TAO, ERA, ZUS and HOPE are **five separate adapter qualification programmes**. XNUVA's goal is consensus-neutral shared-library adoption; the other four involve future separately approved RandomX hard forks. Success for one is not proof for another.
+
+## XNUVA: fifth adapter, compatibility-first
+
+XNUVA is part of the modular architecture **from the outset**, not an optional fifth project. It already produces/validates RandomX v2 blocks using an existing in-tree integration, so replacing that code with a shared dependency is a **consensus-sensitive refactor** even if intended to be neutral:
+
+1. Freeze the current production XNUVA source revision, live chain parameters and accepted block/hash fixtures; keep independent backups.
+2. Build the shared engine and compare **raw digest bytes**, seed/epoch/ancestor selection, header serialisation, validation results, and both light- and mining-path results with XNUVA's established implementation. Confirm genesis, historical replay, chainwork, reorgs and tip selection remain identical.
+3. Use an **isolated XNUVA adapter development branch** and a version-pinned dependency. Do not directly replace its current in-tree RandomX code or modify deployed miners/nodes.
+4. Run multi-node tests, mined-block acceptance/rejection, wallet credit and reward maturity, Game treasury integration, restarts and sustained-operation checks before considering a software-only migration.
+5. If any digest, seed, input, activation, chainwork or acceptance difference is found, **stop**. The change is not a safe drop-in refactor; investigate and treat any necessary rule change as separately reviewed consensus work.
+
+**XNUVA stays XNUVA:** no rebranding or hard fork is justified by repository modularisation alone.
 
 ## Current implementation status (21 November 2026)
 
 - **GitHub source prepared:** Standalone `Xnuva-RandomX-Engine` contains C++20 `LightHasher`, `Hash80ByteHeader`, portable light-cache lifecycle, CMake and candidate offline vectors.
 - **Pinned underlying source:** XNUVA commit `853a3171ece198f60b5125a16dca83d68a8f53c3`.
 - **Not yet proven:** Standalone CMake/CTest actually building and passing, cross-platform reference parity, efficient fast-mode mining, memory/performance profile, source/licence audit or production dependency releases.
-- **Coin adapters:** TAO has a separate experimental initial hashing adapter that is **not** yet integrated with this shared library; no coin has yet imported, linked, qualified or activated the standalone engine.
+- **Five adapter targets:** XNUVA already contains working-chain RandomX v2 hashing code but **has not** adopted this standalone shared library. TAO has a separate experimental initial hashing adapter that is **not** yet integrated with the shared library. Europa, Zeus and Hopium have documented future integration plans. **No coin has imported, linked or independently qualified this standalone module.**
 - **Existing live networks:** Must not be changed by publication of this document. The published EuropaZeus.org roadmap describes future intended names/forks, not completed upgrades.
 
 ## References
