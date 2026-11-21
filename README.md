@@ -10,6 +10,10 @@ This is a **standalone experimental project**, extracted from the XNUVA reposito
 It is deliberately isolated from XNUVA Core's existing build and consensus.
 The original source branch remains preserved for provenance and rollback.
 
+## Shared module architecture policy
+
+**Design standard (21 November 2026):** [Modular RandomX integration architecture](docs/MODULAR-RANDOMX-ARCHITECTURE.md). All future coin modernisations must consume a **pinned, versioned shared C++ engine** through their own isolated consensus adapter. Changes to the engine are **not automatically propagated** to other coins; each adoption requires independent verification. The module is a build-time dependency, not a hot-swappable plugin. See also the [coin-specific release gates](docs/COIN-INTEGRATION.md).
+
 ## Goal
 
 Provide one reusable, pinned **RandomX v2 hashing library** for future XNUVA,
