@@ -59,6 +59,14 @@ target_link_libraries(xnuva_randomx_foundation
 
 include(CTest)
 if(BUILD_TESTING)
+  add_executable(randomx-full-memory-equivalence
+    tests/full_memory_equivalence.cpp)
+  target_compile_features(randomx-full-memory-equivalence
+    PRIVATE cxx_std_20)
+  target_link_libraries(randomx-full-memory-equivalence
+    PRIVATE xnuva::randomx_foundation)
+  add_test(NAME randomx-full-memory-v2-equivalence
+           COMMAND randomx-full-memory-equivalence)
   add_executable(randomx-foundation-tests tests/engine_tests.cpp)
   target_compile_features(randomx-foundation-tests PRIVATE cxx_std_20)
   target_link_libraries(randomx-foundation-tests

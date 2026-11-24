@@ -39,6 +39,27 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
+// Optional full-memory RandomX V2 hashing engine.
+// Intended for mining; ordinary validating nodes may use LightHasher.
+class FullHasher final {
+public:
+    explicit FullHasher(std::span<const std::byte> seed_key);
+    ~FullHasher();
+
+    FullHasher(const FullHasher&) = delete;
+    FullHasher& operator=(const FullHasher&) = delete;
+    FullHasher(FullHasher&&) = delete;
+    FullHasher& operator=(FullHasher&&) = delete;
+
+    [[nodiscard]] Digest Hash(std::span<const std::byte> input) const;
+    [[nodiscard]] Digest Hash80ByteHeader(
+        std::span<const std::byte> serialized_header) const;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
 // Simple fixture helper; it reallocates a light cache on every call.
 // Do not use this helper for production block validation or mining loops.
 [[nodiscard]] Digest HashOnce(std::span<const std::byte> seed_key,
