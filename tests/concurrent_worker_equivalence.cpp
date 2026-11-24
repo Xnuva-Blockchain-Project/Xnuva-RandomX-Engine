@@ -81,5 +81,64 @@ int main()
 
     std::cout << "PASS: default worker compatibility\n";
     std::cout << "PASS: invalid worker index rejected\n";
+
+    // Multiple concurrent rounds using the same dataset and VMs.
+    constexpr std::size_t rounds = 12;
+
+    for (std::size_t round = 0; round < rounds; ++round) {
+        std::array<std::thread, worker_count> jobs{};
+        std::array<std::exception_ptr, worker_count> failures{};
+        std::array<Digest, worker_count> results{};
+
+        for (std::size_t w = 0; w < worker_count; ++w) {
+            headers[w][76] = std::byte(round);
+            headers[w][77] = std::byte(w);
+
+            jobs[w] = std::thread([&, w] {
+                try {
+                    results[w] = full.Hash80ByteHeaderForWorker(
+                        w, headers[w]);
+                } catch (...) {
+                    failures[w] = std::current_exception();
+                }
+            });
+        }
+
+        for (auto& job : jobs)
+            job.join();
+
+        for (std::size_t w = 0; w < worker_count; ++w) {
+            if (failures[w])
+                std::rethrow_exception(failures[w]);
+
+            const Digest reference =
+                light.Hash80ByteHeader(headers[w]);
+
+            if (results[w] != reference)
+                throw std::runtime_error(
+                    "FAIL: repeated concurrent worker mismatch");
+        }
+    }
+
+    std::cout << "PASS: 12 concurrent rounds, 48 hashes\n";
+
+    // Invalid counts must fail before dataset allocation.
+    for (std::size_t invalid_count : {std::size_t{0},
+                                      std::size_t{17}}) {
+        bool rejected_count = false;
+
+        try {
+            FullHasher invalid{seed, invalid_count};
+        } catch (const std::invalid_argument&) {
+            rejected_count = true;
+        }
+
+        if (!rejected_count)
+            throw std::runtime_error(
+                "FAIL: invalid worker count accepted");
+    }
+
+    std::cout << "PASS: invalid worker counts rejected\n";
+
     std::cout << "ALL CONCURRENT WORKER TESTS PASSED\n";
 }
