@@ -75,6 +75,40 @@ int main()
             "FAIL: invalid header length was accepted");
 
     std::cout << "PASS: invalid header length rejected\n";
+
+    std::cout << "Testing second RandomX seed...\n";
+
+    auto seed_two = seed;
+    seed_two[0] ^= std::byte{0x5a};
+
+    LightHasher light_two{seed_two};
+    FullHasher full_two{seed_two};
+
+    const Digest light_two_hash =
+        light_two.Hash80ByteHeader(header);
+
+    const Digest full_two_hash =
+        full_two.Hash80ByteHeader(header);
+
+    if (light_two_hash != full_two_hash)
+        throw std::runtime_error(
+            "FAIL: second seed light/full mismatch");
+
+    if (light_two_hash == light_second)
+        throw std::runtime_error(
+            "FAIL: changing RandomX seed did not change hash");
+
+    if (full.Hash80ByteHeader(header) != full_second)
+        throw std::runtime_error(
+            "FAIL: original seed engine changed after new seed");
+
+    if (full_two.Hash80ByteHeader(header) != full_two_hash)
+        throw std::runtime_error(
+            "FAIL: second seed engine not deterministic");
+
+    std::cout << "PASS: seed transition hashes agree\n";
+    std::cout << "PASS: original seed remains stable\n";
+
     std::cout << "ALL FULL-MEMORY V2 TESTS PASSED\n";
 
     return 0;
