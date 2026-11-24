@@ -95,15 +95,24 @@ using DatasetPtr = std::unique_ptr<randomx_dataset, DatasetDeleter>;
 } // namespace
 
 struct FullHasher::Impl {
+    struct Worker {
+        VMPtr vm;
+        mutable std::mutex mutex;
+    };
+
     CachePtr cache;
     DatasetPtr dataset;
-    VMPtr vm;
-    mutable std::mutex mutex;
+    std::vector<std::unique_ptr<Worker>> workers;
 
-    explicit Impl(std::span<const std::byte> seed_key)
+    explicit Impl(std::span<const std::byte> seed_key,
+                  std::size_t worker_count)
     {
         if (seed_key.empty()) {
             throw std::invalid_argument("RandomX seed key must be nonempty");
+        }
+        if (worker_count == 0 || worker_count > 16) {
+            throw std::invalid_argument(
+                "RandomX worker count must be between 1 and 16");
         }
 
         cache.reset(randomx_alloc_cache(RANDOMX_FLAG_DEFAULT));
@@ -126,19 +135,19 @@ struct FullHasher::Impl {
         // Independent, non-overlapping dataset ranges.
         // All workers finish before the V2 mining VM is created.
         constexpr unsigned long max_workers = 8;
-        const unsigned long worker_count =
+        const unsigned long init_worker_count =
             std::min(count, max_workers);
 
         {
             std::vector<std::jthread> workers;
-            workers.reserve(worker_count);
+            workers.reserve(init_worker_count);
 
-            const unsigned long base = count / worker_count;
-            const unsigned long remainder = count % worker_count;
+            const unsigned long base = count / init_worker_count;
+            const unsigned long remainder = count % init_worker_count;
 
             unsigned long start = 0;
 
-            for (unsigned long i = 0; i < worker_count; ++i) {
+            for (unsigned long i = 0; i < init_worker_count; ++i) {
                 const unsigned long items =
                     base + (i < remainder ? 1UL : 0UL);
 
@@ -157,20 +166,31 @@ struct FullHasher::Impl {
             // dataset use or resource destruction.
         }
 
-        vm.reset(randomx_create_vm(
-            static_cast<randomx_flags>(
-                RANDOMX_FLAG_V2 | RANDOMX_FLAG_FULL_MEM),
-            nullptr,
-            dataset.get()));
 
-        if (!vm) {
-            throw std::runtime_error("RandomX V2 full VM creation failed");
+        workers.reserve(worker_count);
+
+        for (std::size_t i = 0; i < worker_count; ++i) {
+            auto worker = std::make_unique<Worker>();
+
+            worker->vm.reset(randomx_create_vm(
+                static_cast<randomx_flags>(
+                    RANDOMX_FLAG_V2 | RANDOMX_FLAG_FULL_MEM),
+                nullptr,
+                dataset.get()));
+
+            if (!worker->vm) {
+                throw std::runtime_error(
+                    "RandomX V2 mining VM creation failed");
+            }
+
+            workers.push_back(std::move(worker));
         }
     }
 };
 
-FullHasher::FullHasher(std::span<const std::byte> seed_key)
-    : impl_(std::make_unique<Impl>(seed_key))
+FullHasher::FullHasher(std::span<const std::byte> seed_key,
+                       std::size_t worker_count)
+    : impl_(std::make_unique<Impl>(seed_key, worker_count))
 {
 }
 
@@ -178,27 +198,47 @@ FullHasher::~FullHasher() = default;
 
 Digest FullHasher::Hash(std::span<const std::byte> input) const
 {
+    return HashForWorker(0, input);
+}
+
+Digest FullHasher::Hash80ByteHeader(
+    std::span<const std::byte> serialized_header) const
+{
+    return Hash80ByteHeaderForWorker(0, serialized_header);
+}
+
+Digest FullHasher::HashForWorker(
+    std::size_t worker_index,
+    std::span<const std::byte> input) const
+{
     if (input.empty()) {
         throw std::invalid_argument("RandomX input must be nonempty");
     }
 
-    std::lock_guard<std::mutex> lock(impl_->mutex);
+    if (worker_index >= impl_->workers.size()) {
+        throw std::out_of_range("Invalid RandomX worker index");
+    }
+
+    auto& worker = *impl_->workers[worker_index];
+    std::lock_guard<std::mutex> lock(worker.mutex);
 
     Digest result{};
     randomx_calculate_hash(
-        impl_->vm.get(), input.data(), input.size(), result.data());
+        worker.vm.get(), input.data(), input.size(), result.data());
 
     return result;
 }
 
-Digest FullHasher::Hash80ByteHeader(
+Digest FullHasher::Hash80ByteHeaderForWorker(
+    std::size_t worker_index,
     std::span<const std::byte> serialized_header) const
 {
     if (serialized_header.size() != 80) {
         throw std::invalid_argument(
             "RandomX block header must be exactly 80 serialized bytes");
     }
-    return Hash(serialized_header);
+
+    return HashForWorker(worker_index, serialized_header);
 }
 
 Digest HashOnce(std::span<const std::byte> seed_key,

@@ -59,6 +59,14 @@ target_link_libraries(xnuva_randomx_foundation
 
 include(CTest)
 if(BUILD_TESTING)
+  add_executable(randomx-concurrent-worker-equivalence
+    tests/concurrent_worker_equivalence.cpp)
+  target_compile_features(randomx-concurrent-worker-equivalence
+    PRIVATE cxx_std_20)
+  target_link_libraries(randomx-concurrent-worker-equivalence
+    PRIVATE xnuva::randomx_foundation)
+  add_test(NAME randomx-v2-concurrent-worker-equivalence
+           COMMAND randomx-concurrent-worker-equivalence)
   add_executable(randomx-full-memory-equivalence
     tests/full_memory_equivalence.cpp)
   target_compile_features(randomx-full-memory-equivalence

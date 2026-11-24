@@ -43,7 +43,8 @@ private:
 // Intended for mining; ordinary validating nodes may use LightHasher.
 class FullHasher final {
 public:
-    explicit FullHasher(std::span<const std::byte> seed_key);
+    explicit FullHasher(std::span<const std::byte> seed_key,
+                        std::size_t worker_count = 1);
     ~FullHasher();
 
     FullHasher(const FullHasher&) = delete;
@@ -53,6 +54,15 @@ public:
 
     [[nodiscard]] Digest Hash(std::span<const std::byte> input) const;
     [[nodiscard]] Digest Hash80ByteHeader(
+        std::span<const std::byte> serialized_header) const;
+
+    // Each worker has its own VM. The dataset is shared.
+    [[nodiscard]] Digest HashForWorker(
+        std::size_t worker_index,
+        std::span<const std::byte> input) const;
+
+    [[nodiscard]] Digest Hash80ByteHeaderForWorker(
+        std::size_t worker_index,
         std::span<const std::byte> serialized_header) const;
 
 private:
