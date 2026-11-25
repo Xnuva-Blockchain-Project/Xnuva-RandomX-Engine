@@ -1,5 +1,18 @@
 # Shared RandomX Foundation (RX-001)
 
+## Roman heritage rebranding decision — 25 November 2026
+
+| Existing network | Selected future identity | Roman denomination |
+|---|---|---|
+| Europa (ERA) | Aurzola (AUZV) | Aureus |
+| Tao Revival (TAO) | Denzuve (DZUV) | Denarius |
+| Zeus (ZUS) | Sestovi (SEZQ) | Sestertius |
+| XNUVA (XNUV) | Duprezo (DPZE) | Dupondius |
+| Hopium (HOPE) | Asveru (ASVR) | As |
+
+The names are inspired by Roman imperial coinage, with five different vowel endings. They supersede the earlier EuropaX, TaoX, ZeusX and HopiumX naming proposals and the previous intention to retain XNUVA as a coin name. Existing network names, source paths, historical checkpoint labels and released binaries remain valid until a separately qualified transition. No re-genesis, coin swap, balance migration, key change or consensus change is authorised by branding. Supply ranking is provisional pending monetary audit; no fixed exchange ratios or values. Formal trademark/domain clearance and independent AI association tests remain outstanding. The umbrella project, engine, game and domain names remain existing identities until separately selected. See https://europazeus.org/project-identity.html.
+
+
 **STATUS: EXPERIMENTAL / SOURCE-LEVEL CHECKPOINT — DO NOT RELEASE OR DEPLOY**
 **Repository:** Xnuva-Blockchain-Project/Xnuva-RandomX-Engine (standalone extraction from the XNUVA development branch)
 **Created:** 2026-11-21
