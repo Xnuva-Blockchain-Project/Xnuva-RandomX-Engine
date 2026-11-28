@@ -23,6 +23,12 @@ This is a **standalone experimental project**, extracted from the XNUVA reposito
 It is deliberately isolated from XNUVA Core's existing build and consensus.
 The original source branch remains preserved for provenance and rollback.
 
+## Licensing and controlled experimental distribution — 28 November 2026
+
+The XNUVA Blockchain Project authorises distribution of its project-owned foundation code under the [MIT License](LICENSE), including the earlier pinned revision `546a21488dc3a03588094b4e9bdff6535534bcef` used in Denzuve Transition Release 1. This declaration does not relicense third-party code; retain all original copyright, permission and attribution notices, including those of the vendored RandomX dependency.
+
+The project authorises inclusion of this exact pinned foundation revision in Denzuve Core v0.9.0-alpha (source commit `80e9c95592f1bc06565ce192aeba7f28edce1a49`) for controlled isolated regtest experimental distribution, subject to completion of the Denzuve package licensing and publication checks. This is a narrow engineering release approval, not a restriction on the MIT licence rights, and not approval for production deployment, mainnet activation, legacy node replacement, or other coin integrations. The original experimental warning below remains applicable outside this specific approval. No source, dependency pin, consensus rule or executable is changed by this declaration.
+
 ## Shared module architecture policy
 
 **Design standard (21 November 2026):** [Modular RandomX integration architecture](docs/MODULAR-RANDOMX-ARCHITECTURE.md). The shared module is intended for **all five independent blockchains: XNUVA, TAO, ERA, ZUS and HOPE**, each with a **pinned, versioned C++ dependency** and its own isolated consensus adapter. **XNUVA is the fifth adapter**; because it already runs RandomX v2, its adoption is a separate bit-for-bit compatibility refactor, **not** a new hard fork. Changes to the engine are **not automatically propagated** to other coins; each adoption requires independent verification. The module is a build-time dependency, not a hot-swappable plugin. See also the [coin-specific release gates](docs/COIN-INTEGRATION.md).
